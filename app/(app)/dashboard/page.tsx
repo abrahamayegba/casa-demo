@@ -70,14 +70,14 @@ const VISTA_STATS = {
   managedAssets: 1095,
   testsTotal: 442,
   testsPassed: 249,
-  testsFailed: 167,
-  testsNoTest: 442 - 249 - 167, // 26
+  testsFailed: 26,
+  testsNoTest: 167,
 };
 
 // Chart data for first 10 sites (Vista) from the real dataset
 const VISTA_SITE_CHART_DATA = [
-  { site: "88 NLW Communal", pass: 10, fail: 3, noTest: 1 },
-  { site: "90 NLW Communal", pass: 10, fail: 3, noTest: 1 },
+  { site: "88 NLW Communal", pass: 10, fail: 1, noTest: 3 },
+  { site: "90 NLW Communal", pass: 10, fail: 1, noTest: 3 },
   { site: "5 N Lodge Wynd",  pass: 2,  fail: 0, noTest: 0 },
   { site: "8 N Lodge Wynd",  pass: 2,  fail: 0, noTest: 0 },
   { site: "7 N Lodge Wynd",  pass: 1,  fail: 0, noTest: 0 },
