@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import {
   getSites,
   saveSite,
@@ -9,8 +10,9 @@ import {
   getAssetTypes,
   generateId,
   getSiteComplianceStatus,
+  getReactiveJobs,
 } from "@/lib/store";
-import type { Site, SiteContact, SiteComplianceStatus, AssetInstance, AssetType } from "@/lib/types";
+import type { Site, SiteContact, SiteComplianceStatus, AssetInstance, AssetType, ReactiveJob } from "@/lib/types";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,6 +66,9 @@ import {
   ShieldX,
   AlertTriangle,
   CircleDashed,
+  Briefcase,
+  ArrowRight,
+  Clock,
 } from "lucide-react";
 
 type SyncStep = { label: string; done: boolean; active: boolean };
@@ -107,6 +112,7 @@ export default function SitesPage() {
   const [sites, setSites] = useState<Site[]>([]);
   const [instances, setInstances] = useState<AssetInstance[]>([]);
   const [assetTypes, setAssetTypes] = useState<AssetType[]>([]);
+  const [reactiveJobs, setReactiveJobs] = useState<ReactiveJob[]>([]);
   const [complianceMap, setComplianceMap] = useState<Record<string, SiteComplianceStatus>>({});
   const [search, setSearch] = useState("");
   const [regionFilter, setRegionFilter] = useState("all");
@@ -130,6 +136,7 @@ export default function SitesPage() {
     setSites(loadedSites);
     setInstances(getAssetInstances());
     setAssetTypes(getAssetTypes());
+    setReactiveJobs(getReactiveJobs());
     const map: Record<string, SiteComplianceStatus> = {};
     for (const s of loadedSites) {
       map[s.id] = getSiteComplianceStatus(s.id);
@@ -142,6 +149,7 @@ export default function SitesPage() {
     setSites(loadedSites);
     setInstances(getAssetInstances());
     setAssetTypes(getAssetTypes());
+    setReactiveJobs(getReactiveJobs());
     const map: Record<string, SiteComplianceStatus> = {};
     for (const s of loadedSites) {
       map[s.id] = getSiteComplianceStatus(s.id);
@@ -716,6 +724,95 @@ export default function SitesPage() {
                   ))}
                 </div>
               </div>
+
+              {/* Recent Jobs section — shown for sites that have job data */}
+              {(() => {
+                const siteJobs = reactiveJobs
+                  .filter((j) => j.siteId === selectedSite.id)
+                  .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+                  .slice(0, 3);
+                if (siteJobs.length === 0) return null;
+                return (
+                  <div className="flex flex-col gap-2 border-t border-border/50 pt-4">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-1.5">
+                        <Briefcase className="w-3.5 h-3.5 text-muted-foreground" />
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          Recent Jobs
+                        </p>
+                      </div>
+                      <Link
+                        href={`/reactive-jobs`}
+                        onClick={() => setSelectedSite(null)}
+                        className="flex items-center gap-1 text-xs text-[var(--brand-purple)] hover:underline font-medium"
+                      >
+                        All jobs <ArrowRight className="w-3 h-3" />
+                      </Link>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      {siteJobs.map((job) => {
+                        const isCompleted = job.status === "completed";
+                        const isOpen = job.status === "open";
+                        const statusColor = isCompleted
+                          ? "border-green-200 bg-green-50/50 text-green-700"
+                          : isOpen
+                          ? "border-amber-200 bg-amber-50/50 text-amber-700"
+                          : "border-blue-200 bg-blue-50/50 text-blue-700";
+                        const statusDot = isCompleted
+                          ? "bg-green-500"
+                          : isOpen
+                          ? "bg-amber-500"
+                          : "bg-blue-500";
+                        const jobNumber = job.id.replace("job_", "#");
+                        return (
+                          <div
+                            key={job.id}
+                            className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-muted/20 p-3"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-start gap-2 flex-1 min-w-0">
+                                <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${statusDot}`} />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-semibold leading-tight truncate">{job.title}</p>
+                                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                                    Job {jobNumber}
+                                    {job.assignedTo ? ` · ${job.assignedTo}` : ""}
+                                  </p>
+                                </div>
+                              </div>
+                              <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded border shrink-0 ${statusColor}`}>
+                                {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
+                              </span>
+                            </div>
+                            {job.notes && (
+                              <p className="text-[10px] text-muted-foreground line-clamp-2 pl-3.5">
+                                {job.notes}
+                              </p>
+                            )}
+                            <div className="flex items-center justify-between pl-3.5">
+                              <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                                <Clock className="w-3 h-3" />
+                                <span>
+                                  {isCompleted && job.completedAt
+                                    ? `Completed ${new Date(job.completedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`
+                                    : `Scheduled ${new Date(job.scheduledDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`}
+                                </span>
+                              </div>
+                              <Link
+                                href={`/reactive-jobs`}
+                                onClick={() => setSelectedSite(null)}
+                                className="flex items-center gap-0.5 text-[10px] text-[var(--brand-purple)] hover:underline"
+                              >
+                                View card <ExternalLink className="w-2.5 h-2.5" />
+                              </Link>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Attachments section */}
               {selectedSite.attachments && selectedSite.attachments.length > 0 && (

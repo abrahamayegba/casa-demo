@@ -35,6 +35,7 @@ import {
   ShieldCheck,
   ShieldAlert,
   ShieldX,
+  ChevronDown,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -63,8 +64,35 @@ const GREEN = "#16a34a";
 const RED = "#dc2626";
 const AMBER = "#d97706";
 
+// ── Vista group — actual figures from the dataset ──────────────────────────────
+const VISTA_STATS = {
+  sites: 183,
+  managedAssets: 1095,
+  testsTotal: 442,
+  testsPassed: 249,
+  testsFailed: 26,
+  testsNoTest: 167,
+};
+
+// Chart data for first 10 sites (Vista) from the real dataset
+const VISTA_SITE_CHART_DATA = [
+  { site: "88 NLW Communal", pass: 10, fail: 1, noTest: 3 },
+  { site: "90 NLW Communal", pass: 10, fail: 1, noTest: 3 },
+  { site: "5 N Lodge Wynd",  pass: 2,  fail: 0, noTest: 0 },
+  { site: "8 N Lodge Wynd",  pass: 2,  fail: 0, noTest: 0 },
+  { site: "7 N Lodge Wynd",  pass: 1,  fail: 0, noTest: 0 },
+  { site: "1202 Edinburgh Rd", pass: 1, fail: 0, noTest: 0 },
+  { site: "1196 Edinburgh Rd", pass: 1, fail: 0, noTest: 0 },
+  { site: "27 N Lodge Wynd", pass: 1,  fail: 0, noTest: 0 },
+  { site: "8 N Lodge Gate",  pass: 1,  fail: 0, noTest: 0 },
+  { site: "57 N Lodge Wynd", pass: 1,  fail: 0, noTest: 0 },
+];
+
 export default function DashboardPage() {
   const { user } = useAuth();
+  const [selectedGroup, setSelectedGroup] = useState<"Vista" | "Nottingham">("Vista");
+  const [groupMenuOpen, setGroupMenuOpen] = useState(false);
+
   const [sites, setSites] = useState<Site[]>([]);
   const [instances, setInstances] = useState<AssetInstance[]>([]);
   const [tests, setTests] = useState<AssetTest[]>([]);
@@ -81,18 +109,12 @@ export default function DashboardPage() {
     setComplianceStatuses(getAllSiteComplianceStatuses());
   }, []);
 
-  const activeSites = sites.filter((s) => s.status === "active").length;
-  const totalAssets = instances.length;
-  const passedTests = tests.filter((t) => t.result === "pass").length;
-  const failedTests = tests.filter((t) => t.result === "fail").length;
-
-  // Assets with no test at all or overdue for testing
-  const noTestAssets = instances.filter(
-    (i) =>
-      !i.lastTestResult ||
-      i.lastTestResult === "pending" ||
-      (i.nextTestDue && isPast(new Date(i.nextTestDue))),
-  ).length;
+  // Vista uses fixed real stats; Nottingham is disabled/placeholder
+  const activeSites = VISTA_STATS.sites;
+  const totalAssets = VISTA_STATS.managedAssets;
+  const passedTests = VISTA_STATS.testsPassed;
+  const failedTests = VISTA_STATS.testsFailed;
+  const noTestAssets = VISTA_STATS.testsNoTest;
 
   const overdueAssets = instances.filter(
     (i) =>
@@ -127,36 +149,10 @@ export default function DashboardPage() {
     })
     .slice(0, 5);
 
-  // Combo bar chart: pass / fail / no-test per site — top 12 by total assets, sorted by fail count desc
-  const siteChartData = sites
-    .filter((s) => s.status === "active")
-    .map((site) => {
-      const siteInstances = instances.filter((i) => i.siteId === site.id);
-      const pass = siteInstances.filter(
-        (i) => i.lastTestResult === "pass",
-      ).length;
-      const fail = siteInstances.filter(
-        (i) => i.lastTestResult === "fail",
-      ).length;
-      const noTest = siteInstances.filter(
-        (i) =>
-          !i.lastTestResult ||
-          i.lastTestResult === "pending" ||
-          (i.nextTestDue && isPast(new Date(i.nextTestDue))),
-      ).length;
-      const shortName = site.name
-        .replace(
-          / (Supported Living|Care Home|Day Centre|Resource Centre|Residential|Hub|Crown House)$/i,
-          "",
-        )
-        .slice(0, 18);
-      return { site: shortName, pass, fail, noTest, total: pass + fail + noTest };
-    })
-    .filter((d) => d.total > 0)
-    .sort((a, b) => b.fail - a.fail || b.total - a.total)
-    .slice(0, 12);
+  // Use pre-computed Vista chart data (first 10 sites)
+  const siteChartData = VISTA_SITE_CHART_DATA;
 
-  // Pie data — pass vs fail vs no test
+  // Pie data — Vista totals
   const pieData = [
     { name: "Pass", value: passedTests },
     { name: "Fail", value: failedTests },
@@ -177,15 +173,48 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-7xl mx-auto">
-      {/* Welcome */}
-      <div>
-        <h2 className="text-2xl font-bold text-foreground text-balance">
-          Good {getTimeOfDay()}, {user?.name.split(" ")[0]}
-        </h2>
-        <p className="text-muted-foreground text-sm mt-1">
-          Here&apos;s an overview of the Casa Moda asset compliance
-          status.
-        </p>
+      {/* Welcome + Group Selector */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground text-balance">
+            Good {getTimeOfDay()}, {user?.name.split(" ")[0]}
+          </h2>
+          <p className="text-muted-foreground text-sm mt-1">
+            Here&apos;s an overview of the Casa by Moda asset compliance status.
+          </p>
+        </div>
+        {/* Group selector dropdown */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setGroupMenuOpen((v) => !v)}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card text-sm font-medium hover:bg-muted/40 transition-colors"
+          >
+            <Building2 className="w-4 h-4 text-[var(--brand-purple)]" />
+            <span>{selectedGroup}</span>
+            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+          </button>
+          {groupMenuOpen && (
+            <div className="absolute right-0 top-full mt-1 w-44 rounded-lg border border-border bg-card shadow-lg z-20 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => { setSelectedGroup("Vista"); setGroupMenuOpen(false); }}
+                className="w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-muted/40 transition-colors"
+              >
+                <span>Vista</span>
+                {selectedGroup === "Vista" && <CheckCircle2 className="w-3.5 h-3.5 text-[var(--brand-purple)]" />}
+              </button>
+              <button
+                type="button"
+                disabled
+                className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-muted-foreground cursor-not-allowed opacity-50"
+              >
+                <span>Nottingham</span>
+                <span className="text-[10px] border rounded px-1 py-0.5">Soon</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -196,7 +225,7 @@ export default function DashboardPage() {
           icon={Building2}
           color="purple"
           href="/sites"
-          sub={`${sites.length} total`}
+          sub="Vista group"
         />
         <KpiCard
           title="Managed Assets"
@@ -204,7 +233,7 @@ export default function DashboardPage() {
           icon={Package}
           color="purple"
           href="/assets"
-          sub="across all sites"
+          sub="across Vista sites"
         />
         <KpiCard
           title="Assets - Passed"
@@ -212,7 +241,7 @@ export default function DashboardPage() {
           icon={CheckCircle2}
           color="green"
           href="/tests"
-          sub={`${tests.length} total tests`}
+          sub={`${VISTA_STATS.testsTotal} total tests`}
         />
         <KpiCard
           title="Assets - Failed"

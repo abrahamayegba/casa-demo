@@ -154,16 +154,16 @@ export default function LoginPage() {
               </div>
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Isobel Ridsdale (Admin):</span>
+                  <span className="text-muted-foreground">Riana Ladzian&shy;ska (Admin):</span>
                   <button
                     type="button"
                     className="text-[var(--brand-gold)] hover:underline font-mono"
                     onClick={() => {
-                      setEmail("isobel@casa.moda");
+                      setEmail("Riana@casa.moda");
                       setPassword("SecurePass123!");
                     }}
                   >
-                    isobel@casa.moda
+                    Riana@casa.moda
                   </button>
                 </div>
               </div>
