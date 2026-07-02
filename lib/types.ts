@@ -81,7 +81,8 @@ export interface Attachment {
   name: string;
   type: string; // MIME type
   size: number; // bytes
-  dataUrl: string; // base64 data URL (simulated upload)
+  dataUrl: string; // base64 data URL (simulated upload) — empty string when url is provided
+  url?: string; // public URL for real documents served from /public/docs/
   uploadedAt: string;
 }
 

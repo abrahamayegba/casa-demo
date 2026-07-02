@@ -64,6 +64,7 @@ import {
   FileText,
   Image as ImageIcon,
   ChevronDown,
+  ExternalLink,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -641,9 +642,12 @@ function TestDetailDialog({
 
           {test.attachments.length > 0 && (
             <div className="flex flex-col gap-2 pt-1 border-t border-border/50">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                Attachments ({test.attachments.length})
-              </p>
+              <div className="flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-muted-foreground" />
+                <p className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground">
+                  Documents ({test.attachments.length})
+                </p>
+              </div>
               <div className="flex flex-col gap-2">
                 {test.attachments.map((att) => (
                   <AttachmentPreview key={att.id} attachment={att} />
@@ -671,9 +675,10 @@ function TestDetailDialog({
 // ─── Attachment Preview ───────────────────────────────────────────────────────
 function AttachmentPreview({ attachment }: { attachment: Attachment }) {
   const isImage = attachment.type.startsWith("image/");
+  const href = attachment.url || attachment.dataUrl;
   return (
     <a
-      href={attachment.dataUrl}
+      href={href}
       target="_blank"
       rel="noopener noreferrer"
       className="flex items-center gap-2.5 p-2.5 rounded-lg border border-border/60 bg-muted/30 hover:bg-muted/60 transition-colors group"
@@ -687,9 +692,10 @@ function AttachmentPreview({ attachment }: { attachment: Attachment }) {
       <div className="flex-1 min-w-0">
         <p className="text-xs font-medium truncate">{attachment.name}</p>
         <p className="text-[10px] text-muted-foreground">
-          {(attachment.size / 1024).toFixed(1)} KB
+          {(attachment.size / 1024).toFixed(1)} KB · PDF
         </p>
       </div>
+      <ExternalLink className="w-3 h-3 text-muted-foreground/50 group-hover:text-muted-foreground shrink-0 transition-colors" />
     </a>
   );
 }
